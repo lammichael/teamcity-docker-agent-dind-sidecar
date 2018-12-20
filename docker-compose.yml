@@ -1,0 +1,33 @@
+version: "3.7"
+services:
+  teamcity_agent:
+    image: jetbrains/teamcity-agent:2018.2
+    environment:
+      DOCKER_HOST: unix:///var/run/docker_in_docker_sidecar/docker.sock
+      SERVER_URL: teamcity_server:8111
+    volumes:
+      - buildagent:/opt/buildagent
+      - docker_in_docker_sockets:/var/run/docker_in_docker_sidecar
+
+  docker_in_docker_sidecar:
+    image: docker:18.09.0-dind
+    command: []
+    depends_on:
+      - teamcity_agent
+    privileged: yes
+    volumes:
+      - buildagent:/opt/buildagent 
+      - docker_in_docker_sockets:/var/run
+
+  # Only used here for testing the agent
+  teamcity_server:
+    image: jetbrains/teamcity-server:2018.2
+    ports:
+      - "8111:8111"
+
+volumes:
+  # Share Docker sockets between the agent and sidecar
+  docker_in_docker_sockets:
+
+  # Sharing the buildagent directory is required for TeamCity Docker Wrapper feature
+  buildagent:
